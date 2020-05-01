@@ -1,16 +1,16 @@
 # staticsql
 
-A library for working with [StaticSQL](https://github.com/iteg-hq/staticsql) entity metadata files.
+`staticsql` is a library for working with StaticSQL entity metadata files. For more information about StaticSQL, see https://github.com/iteg-hq/staticsql.
 
 ## Quick start
 
-Install using pip:
+Install:
 
 ```
 pip install staticsql
 ```
 
-You can check which version of staticsql you have installed by importing it:
+Version check:
 
 ```
 >>> import staticsql
@@ -18,16 +18,18 @@ You can check which version of staticsql you have installed by importing it:
 '0.9.3'
 ```
 
-`staticsql` can get 
+`staticsql` provides a number of ways of creating metadata objects:
 
-- Create metadata programmatically, using `Entity` and `Attribute`
-- Loading existing json files
+- Creating them programmatically
+- Loading them from existing json files
 - Parsing SQL files
-- Extracting from live databases
+- Extracting them from live databases
+
+We'll look at these in turn below.
 
 ### Using `Entity` and `Attribute`
 
-If you have no other source for metadata definitions, you can create them in code, by using the `Entity` and `Attribute` classes:
+You can create metadata definitions in code, by using the `Entity` and `Attribute` classes:
 
 ```python
 >>> from staticsql.entity import Entity, Attribute
@@ -60,6 +62,8 @@ If you have no other source for metadata definitions, you can create them in cod
 
 The `save()` method of `Entity` saves the metadata to `dbo.Person.json` - the name is constructed using the schema and entity names. You can pass a path to `save` to save it under a different name.
 
+### Loading from json files
+
 You can load, modify and save existing metadata files:
 
 ```python
@@ -75,7 +79,7 @@ You can load, modify and save existing metadata files:
 
 In this case, calling `save()` with no arguments saves the file to the path from which it was loaded, and passing a path to `save()` saves it somewhere else.
 
-## Parsing SQL
+### Parsing SQL
 
 If the entities you're working with exist as CREATE TABLE statements (from a data modelling tool or a legacy solution), you can turn them into metadata objects by using `staticsql.sql.parse()`:
 
@@ -143,9 +147,9 @@ You can also use `parse()` on view definitions:
 
 Neither data types nor nullability of the columns are inferred.
 
-## Extracting from databases
+### Extracting from databases
 
-You can extract metadata from live databases using `staticsql.database.extract()`:
+You can extract metadata from database connections using `staticsql.database.extract()`:
 
 ```python
 >>> import staticsql.database
@@ -156,4 +160,6 @@ You can extract metadata from live databases using `staticsql.database.extract()
 ```
 
 This creates one file per entity and will extract all metadata for views, including column data types and nullability.
+
+
 
