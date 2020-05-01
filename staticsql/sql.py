@@ -10,12 +10,16 @@ lexer = (
 
     ("CREATE", r"(create)\b"),
     ("TABLE", r"(table)\b"),
+    ("VIEW", r"(view)\b"),
+    ("AS", r"(as)\b"),
+    ("SELECT", r"(select)\b"),
     ("CONSTRAINT", r"(constraint)\b"),
     ("PRIMARY", r"(primary|\[primary\])\b"),
     ("CLUSTERED", r"(clustered)\b"),
     ("ASC", r"(asc)\b"),
     ("DESC", r"(desc)\b"),
     ("WITH", r"(with)\b"),
+    ("FROM", r"(from)\b"),
     ("KEY", r"(key)\b"),
     ("NOT", r"(not)\b"),
     ("NULL", r"(null)\b"),
@@ -67,6 +71,7 @@ def gettokens(sql):
                 break
         else:
             raise Exception("No match", sql[pos:pos+10])
+    tokens.append(Token("EOF", pos, line_number, column_number))
     return tokens
 
 class ParseException(Exception):
@@ -84,18 +89,15 @@ class Parser(object):
         self.tokens = gettokens(sql)
         self.skip_until("CREATE")
         self.expect("CREATE")
+        if self.lookahead("TABLE"):
+            self.create_table()
+        if self.lookahead("VIEW"):
+            self.create_view()
+
+    def create_table(self):
         self.expect("TABLE")
 
-        # Remember which token we're at before we try anything
-        if self.lookahead("NAME", "PERIOD", "NAME"):
-            # Try for a dotted name
-            self.table.schema = self.expect("NAME").value
-            self.expect("PERIOD")
-            self.table.name = self.expect("NAME").value
-        else:
-            # If that fails, try for an unqualified name, defaulting the schema
-            self.table.name = self.expect("NAME").value
-            self.table.schema = None
+        self.name()
 
         # Skip everything until the opening paren of the table definition
         self.skip_until("LPAREN")
@@ -127,6 +129,18 @@ class Parser(object):
             if next_token.typename == "COMMA":
                 self.expect("COMMA")
         self.expect("RPAREN")
+
+    def name(self):
+        # Remember which token we're at before we try anything
+        if self.lookahead("NAME", "PERIOD", "NAME"):
+            # Try for a dotted name
+            self.table.schema = self.expect("NAME").value
+            self.expect("PERIOD")
+            self.table.name = self.expect("NAME").value
+        else:
+            # If that fails, try for an unqualified name, defaulting the schema
+            self.table.name = self.expect("NAME").value
+            self.table.schema = None
 
     def primary_key(self):
         self.expect("PRIMARY")
@@ -203,6 +217,25 @@ class Parser(object):
         # Non-fancy name            
         else:
             return self.expect("NAME").value.upper()
+
+    def create_view(self):
+        self.expect("VIEW")
+        self.name()
+        self.expect("AS")
+        while not self.lookahead("EOF"):
+            if self.lookahead("NAME", "COMMA"):
+                self.table.attributes.append(Attribute(name=self.expect("NAME").value))
+                self.expect("COMMA")
+            elif self.lookahead("NAME", "FROM"):
+                self.table.attributes.append(Attribute(name=self.expect("NAME").value))
+                self.expect("FROM")
+                break
+            elif self.lookahead("NAME", "EOF"):
+                self.table.attributes.append(Attribute(name=self.expect("NAME").value))
+                break
+            else:
+                self.skip_any()
+
 
     def get_next_token(self, offset=0):
         next_token_pos = self.pos + offset
@@ -286,4 +319,3 @@ def parse(sql, unique_tag=None, verbose=False):
         for i, item in enumerate(parser.key_items):
             parser.table.get_attribute(item).tags.append(f"{unique_tag}:{i+1}")
     return parser.table
-

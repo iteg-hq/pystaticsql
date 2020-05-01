@@ -30,7 +30,7 @@ class Entity(object):
         self.schema = schema
         self.name = name
         self.tags = list(tags)
-        self.attributes = list()
+        self.attributes = list(attributes)
         self.path = None
 
     def get_tag(self, tag):
@@ -96,10 +96,10 @@ class Entity(object):
 
 
 class Attribute(object):
-    def __init__(self, name=None, data_type=None, is_nullable=None, tags=list()):
-        self.name = str(name)
-        self.data_type = str(data_type)
-        self.is_nullable = bool(is_nullable)
+    def __init__(self, name=None, data_type=None, is_nullable=None, tags=[]):
+        self.name = name
+        self.data_type = data_type
+        self.is_nullable = is_nullable
         self.tags = list(tags)
 
     def __repr__(self):
